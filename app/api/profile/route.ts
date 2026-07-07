@@ -66,7 +66,13 @@ export async function GET(req: NextRequest) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: payload.id },
-      include: { studentProfile: true },
+      include: {
+        studentProfile: {
+          include: {
+            applications: true,
+          },
+        },
+      },
     });
     return NextResponse.json({ user });
   } catch (err) {

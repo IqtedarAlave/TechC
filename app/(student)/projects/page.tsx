@@ -1,25 +1,33 @@
 "use client";
-import { useState } from "react";
-import { GitBranch, Upload, CheckCircle, Clock, AlertCircle, ExternalLink, Loader2 } from "lucide-react";
-import { Metadata } from "next";
 
-const MOCK_SUBMISSIONS = [
-  {
-    id: "1", title: "Portfolio Website", githubUrl: "https://github.com/iqtedar/portfolio",
-    status: "MENTOR_APPROVED", autoScore: 92, aiScore: 89, badgeUid: "tc_a3f9d2b1e7",
-    submittedAt: "2024-06-01", difficulty: "Junior",
-  },
-  {
-    id: "2", title: "REST API with Node.js", githubUrl: "https://github.com/iqtedar/rest-api",
-    status: "AI_REVIEWED", autoScore: 85, aiScore: 81, badgeUid: null,
-    submittedAt: "2024-06-10", difficulty: "Junior",
-  },
-  {
-    id: "3", title: "React Todo App", githubUrl: "https://github.com/iqtedar/todo",
-    status: "PENDING", autoScore: null, aiScore: null, badgeUid: null,
-    submittedAt: "2024-06-12", difficulty: "Junior",
-  },
-];
+import { useState, useEffect } from "react";
+import { GitBranch, Upload, CheckCircle, Clock, AlertCircle, ExternalLink, Loader2 } from "lucide-react";
+
+interface Submission {
+  id: string;
+  projectId: string;
+  githubUrl: string;
+  description: string | null;
+  status: string;
+  autoCheckScore: number | null;
+  aiReviewScore: number | null;
+  badgeUid: string | null;
+  createdAt: string;
+  project: {
+    title: string;
+    difficulty: string;
+    roadmap: {
+      title: string;
+    };
+  };
+}
+
+interface RoadmapProject {
+  id: string;
+  title: string;
+  difficulty: string;
+  skills: string[];
+}
 
 const STATUS_CONFIG: Record<string, { label: string; badge: string; icon: React.ReactNode; desc: string }> = {
   PENDING:         { label: "Pending",       badge: "badge-muted",  icon: <Clock className="w-3.5 h-3.5" />, desc: "Queued for automated check" },
@@ -29,31 +37,94 @@ const STATUS_CONFIG: Record<string, { label: string; badge: string; icon: React.
   REJECTED:        { label: "Rejected",      badge: "badge-red",    icon: <AlertCircle className="w-3.5 h-3.5" />, desc: "Submission rejected. See notes." },
 };
 
-const ROADMAP_PROJECTS = [
-  { id: "p1", title: "Build a full-stack CRUD app", difficulty: "Junior", skills: ["React", "Express", "PostgreSQL"] },
-  { id: "p2", title: "JWT Authentication system", difficulty: "Junior", skills: ["Node.js", "JWT", "bcrypt"] },
-  { id: "p3", title: "Real-time chat with WebSockets", difficulty: "Mid", skills: ["Socket.io", "React", "Node.js"] },
-];
-
 export default function ProjectsPage() {
   const [showForm, setShowForm] = useState(false);
   const [selectedProject, setSelectedProject] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [description, setDescription] = useState("");
+  
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [roadmapProjects, setRoadmapProjects] = useState<RoadmapProject[]>([]);
+  
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadData = async () => {
+    try {
+      const [subRes, rmRes] = await Promise.all([
+        fetch("/api/submissions"),
+        fetch("/api/roadmap"),
+      ]);
+      
+      if (subRes.ok) {
+        const subData = await subRes.json();
+        setSubmissions(subData.submissions || []);
+      }
+      
+      if (rmRes.ok) {
+        const rmData = await rmRes.json();
+        if (rmData.roadmap && rmData.roadmap.projects) {
+          // Filter out already submitted projects from the dropdown options
+          setRoadmapProjects(rmData.roadmap.projects);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading projects data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
-    // Simulate API call
-    await new Promise((r) => setTimeout(r, 1500));
-    setSubmitting(false);
-    setSuccess(true);
-    setShowForm(false);
-    setGithubUrl(""); setDescription(""); setSelectedProject("");
-    setTimeout(() => setSuccess(false), 4000);
+    setError("");
+    setSuccess(false);
+
+    try {
+      const res = await fetch("/api/submissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectId: selectedProject,
+          githubUrl,
+          description,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to submit project");
+      }
+
+      setSuccess(true);
+      setShowForm(false);
+      setGithubUrl("");
+      setDescription("");
+      setSelectedProject("");
+      
+      // Refresh listings
+      await loadData();
+      
+      setTimeout(() => setSuccess(false), 4000);
+    } catch (err: any) {
+      setError(err.message || "An error occurred while submitting.");
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  // Filter out roadmap projects that have already been submitted
+  const submittedProjectIds = submissions.map((s) => s.projectId);
+  const availableProjects = roadmapProjects.filter((p) => !submittedProjectIds.includes(p.id));
 
   return (
     <div className="space-y-8 animate-fade-up">
@@ -76,6 +147,14 @@ export default function ProjectsPage() {
         </div>
       )}
 
+      {/* Error banner */}
+      {error && (
+        <div className="card border-red-500/30 bg-red-500/5 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+          <p className="text-sm text-red-300">{error}</p>
+        </div>
+      )}
+
       {/* Submission form */}
       {showForm && (
         <div className="card border-brand-500/30 animate-fade-up">
@@ -86,7 +165,7 @@ export default function ProjectsPage() {
               <label className="label">Select roadmap project</label>
               <select className="select" value={selectedProject} onChange={(e) => setSelectedProject(e.target.value)} required>
                 <option value="">Choose a project from your roadmap</option>
-                {ROADMAP_PROJECTS.map((p) => (
+                {availableProjects.map((p) => (
                   <option key={p.id} value={p.id}>{p.title} — {p.difficulty}</option>
                 ))}
               </select>
@@ -143,57 +222,75 @@ export default function ProjectsPage() {
       {/* Submissions list */}
       <div className="space-y-4">
         <h2 className="section-title">My submissions</h2>
-        {MOCK_SUBMISSIONS.map((sub) => {
-          const s = STATUS_CONFIG[sub.status];
-          return (
-            <div key={sub.id} className="card hover:border-brand-500/20 transition-colors">
-              <div className="flex items-start justify-between gap-4 mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center text-brand-400">
-                    <GitBranch className="w-5 h-5" />
+        
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3 text-[--text-muted]">
+            <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
+            <p className="text-sm">Loading submissions...</p>
+          </div>
+        ) : submissions.length === 0 ? (
+          <div className="card text-center py-12 text-[--text-muted] border-dashed border-slate-700">
+            <p className="text-sm">You haven&apos;t submitted any projects yet.</p>
+            <button onClick={() => setShowForm(true)} className="btn-secondary text-xs mt-3">Submit your first project</button>
+          </div>
+        ) : (
+          submissions.map((sub) => {
+            const s = STATUS_CONFIG[sub.status] || {
+              label: sub.status,
+              badge: "badge-muted",
+              icon: <Clock className="w-3.5 h-3.5" />,
+              desc: "Unknown status",
+            };
+            return (
+              <div key={sub.id} className="card hover:border-brand-500/20 transition-colors animate-fade-in">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center text-brand-400">
+                      <GitBranch className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-[--text]">{sub.project.title}</p>
+                      <a href={sub.githubUrl} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-[--text-muted] hover:text-brand-400 flex items-center gap-1 mt-0.5">
+                        {sub.githubUrl.replace("https://github.com/", "github.com/")}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-[--text]">{sub.title}</p>
-                    <a href={sub.githubUrl} target="_blank" rel="noopener noreferrer"
-                      className="text-xs text-[--text-muted] hover:text-brand-400 flex items-center gap-1 mt-0.5">
-                      {sub.githubUrl.replace("https://github.com/", "github.com/")}
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                  <span className={`${s.badge} flex items-center gap-1`}>{s.icon} {s.label}</span>
+                </div>
+
+                {/* Validation progress */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className={`p-3 rounded-xl text-center ${sub.autoCheckScore ? "bg-brand-500/10" : "bg-surface-muted"}`}>
+                    <p className="text-xs text-[--text-muted] mb-1">Auto check</p>
+                    <p className={`text-lg font-bold font-display ${sub.autoCheckScore ? "text-brand-300" : "text-[--text-muted]"}`}>
+                      {sub.autoCheckScore ? `${sub.autoCheckScore}` : "—"}
+                    </p>
+                    {sub.autoCheckScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
+                  </div>
+                  <div className={`p-3 rounded-xl text-center ${sub.aiReviewScore ? "bg-purple-500/10" : "bg-surface-muted"}`}>
+                    <p className="text-xs text-[--text-muted] mb-1">AI review</p>
+                    <p className={`text-lg font-bold font-display ${sub.aiReviewScore ? "text-purple-300" : "text-[--text-muted]"}`}>
+                      {sub.aiReviewScore ? `${sub.aiReviewScore}` : "—"}
+                    </p>
+                    {sub.aiReviewScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
+                  </div>
+                  <div className={`p-3 rounded-xl text-center ${sub.badgeUid ? "bg-accent-500/10" : "bg-surface-muted"}`}>
+                    <p className="text-xs text-[--text-muted] mb-1">Mentor badge</p>
+                    {sub.badgeUid ? (
+                      <p className="text-accent-400 text-xs font-mono break-all">{sub.badgeUid}</p>
+                    ) : (
+                      <p className="text-[--text-muted] text-lg font-bold">—</p>
+                    )}
                   </div>
                 </div>
-                <span className={`${s.badge} flex items-center gap-1`}>{s.icon} {s.label}</span>
-              </div>
 
-              {/* Validation progress */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className={`p-3 rounded-xl text-center ${sub.autoScore ? "bg-brand-500/10" : "bg-surface-muted"}`}>
-                  <p className="text-xs text-[--text-muted] mb-1">Auto check</p>
-                  <p className={`text-lg font-bold font-display ${sub.autoScore ? "text-brand-300" : "text-[--text-muted]"}`}>
-                    {sub.autoScore ? `${sub.autoScore}` : "—"}
-                  </p>
-                  {sub.autoScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
-                </div>
-                <div className={`p-3 rounded-xl text-center ${sub.aiScore ? "bg-purple-500/10" : "bg-surface-muted"}`}>
-                  <p className="text-xs text-[--text-muted] mb-1">AI review</p>
-                  <p className={`text-lg font-bold font-display ${sub.aiScore ? "text-purple-300" : "text-[--text-muted]"}`}>
-                    {sub.aiScore ? `${sub.aiScore}` : "—"}
-                  </p>
-                  {sub.aiScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
-                </div>
-                <div className={`p-3 rounded-xl text-center ${sub.badgeUid ? "bg-accent-500/10" : "bg-surface-muted"}`}>
-                  <p className="text-xs text-[--text-muted] mb-1">Mentor badge</p>
-                  {sub.badgeUid ? (
-                    <p className="text-accent-400 text-xs font-mono break-all">{sub.badgeUid}</p>
-                  ) : (
-                    <p className="text-[--text-muted] text-lg font-bold">—</p>
-                  )}
-                </div>
+                <p className="text-xs text-[--text-muted] mt-3">{s.desc}</p>
               </div>
-
-              <p className="text-xs text-[--text-muted] mt-3">{s.desc}</p>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );

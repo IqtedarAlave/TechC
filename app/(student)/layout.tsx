@@ -1,4 +1,5 @@
 import { StudentSidebar } from "@/components/student/StudentSidebar";
+import { BadgeCelebration } from "@/components/student/BadgeCelebration";
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,6 +10,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           {children}
         </div>
       </main>
+      <BadgeCelebration />
     </div>
   );
 }
