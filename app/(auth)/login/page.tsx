@@ -27,7 +27,7 @@ export default function LoginPage() {
       if (!res.ok) { setError(data.message || "Login failed"); setLoading(false); return; }
 
       // Redirect by role
-      if (data.role === "STUDENT") window.location.href = "/student/dashboard";
+      if (data.role === "STUDENT") window.location.href = "/dashboard";
       else if (data.role === "EMPLOYER") window.location.href = "/employer/dashboard";
       else if (data.role === "ADMIN") window.location.href = "/admin/dashboard";
     } catch {
