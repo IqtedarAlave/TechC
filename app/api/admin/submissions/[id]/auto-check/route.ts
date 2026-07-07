@@ -49,6 +49,7 @@ export async function POST(
     const headers: Record<string, string> = {
       "Accept": "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
+      "User-Agent": "TechC-Platform",
     };
     if (process.env.GITHUB_TOKEN) {
       headers["Authorization"] = `Bearer ${process.env.GITHUB_TOKEN}`;

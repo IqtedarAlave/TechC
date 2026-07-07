@@ -46,6 +46,43 @@ export default function AdminSubmissionsPage() {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState("All");
   const [submittingId, setSubmittingId] = useState<string | null>(null);
+  const [runningActionId, setRunningActionId] = useState<string | null>(null);
+
+  const handleAutoCheck = async (id: string) => {
+    setRunningActionId(id);
+    try {
+      const res = await fetch(`/api/admin/submissions/${id}/auto-check`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Auto-check failed");
+      }
+      await loadSubmissions();
+    } catch (err: any) {
+      alert(err.message || "An error occurred during auto-check.");
+    } finally {
+      setRunningActionId(null);
+    }
+  };
+
+  const handleAiReview = async (id: string) => {
+    setRunningActionId(id);
+    try {
+      const res = await fetch(`/api/admin/submissions/${id}/ai-review`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "AI review failed");
+      }
+      await loadSubmissions();
+    } catch (err: any) {
+      alert(err.message || "An error occurred during AI review.");
+    } finally {
+      setRunningActionId(null);
+    }
+  };
 
   const loadSubmissions = async () => {
     try {
@@ -240,11 +277,45 @@ export default function AdminSubmissionsPage() {
                       </div>
                     )}
 
+                    {sub.status === "PENDING" && (
+                      <div className="bg-slate-500/10 border border-slate-500/20 rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+                        <div>
+                          <p className="text-sm text-slate-300 font-medium">Pending automated check</p>
+                          <p className="text-xs text-[--text-muted] mt-0.5">Run automated checks to verify this GitHub repository.</p>
+                        </div>
+                        <button
+                          onClick={() => handleAutoCheck(sub.id)}
+                          disabled={runningActionId === sub.id}
+                          className="btn-primary text-xs py-1.5 px-4 shrink-0 flex items-center gap-1.5"
+                        >
+                          {runningActionId === sub.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Shield className="w-3.5 h-3.5" />
+                          )}
+                          Run auto check
+                        </button>
+                      </div>
+                    )}
+
                     {sub.status === "AUTO_CHECKED" && (
-                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3">
-                        <p className="text-sm text-blue-300">
-                          This submission needs AI review before mentor evaluation. Run the automated review background jobs to trigger it.
-                        </p>
+                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+                        <div>
+                          <p className="text-sm text-blue-300 font-medium">Needs AI Review</p>
+                          <p className="text-xs text-[--text-muted] mt-0.5">This submission needs AI review before mentor evaluation.</p>
+                        </div>
+                        <button
+                          onClick={() => handleAiReview(sub.id)}
+                          disabled={runningActionId === sub.id}
+                          className="btn-primary bg-purple-600 hover:bg-purple-700 text-xs py-1.5 px-4 shrink-0 flex items-center gap-1.5"
+                        >
+                          {runningActionId === sub.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Shield className="w-3.5 h-3.5" />
+                          )}
+                          Run AI review
+                        </button>
                       </div>
                     )}
                     
