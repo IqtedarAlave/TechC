@@ -209,7 +209,7 @@ export default async function EmployerDashboard() {
             {myJobs.length === 0 && (
               <p className="text-sm text-[--text-muted] italic py-4 text-center">No jobs posted yet</p>
             )}
-            <Link href="/employer/post-job" className="btn-primary w-full text-center text-sm mt-3">
+            <Link href="/employer/post-job" className="btn-primary block w-full text-center text-sm mt-3">
               Post a new job
             </Link>
           </div>
