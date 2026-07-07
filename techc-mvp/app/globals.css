@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg:          #0f1117;
+    --surface:     #16181f;
+    --border:      #252836;
+    --muted:       #2a2d3e;
+    --text:        #e8eaf0;
+    --text-muted:  #7c82a0;
+    --brand:       #3b6ef0;
+    --brand-light: #5590f7;
+    --accent:      #10b981;
+    --danger:      #ef4444;
+    --warning:     #f59e0b;
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    background: var(--bg);
+    color: var(--text);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: "Inter", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: "Space Grotesk", sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  ::selection {
+    background: #3b6ef033;
+    color: #8ab8ff;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 3px; }
+}
+
+@layer components {
+  /* ── Cards ── */
+  .card {
+    @apply bg-surface-card border border-surface-border rounded-2xl p-6;
+  }
+  .card-hover {
+    @apply card transition-all duration-200 hover:border-brand-500/40 hover:-translate-y-0.5;
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply bg-brand-500 hover:bg-brand-600 text-white font-medium px-5 py-2.5 rounded-xl
+           transition-all duration-150 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-surface-muted hover:bg-surface-border text-[--text] font-medium px-5 py-2.5 rounded-xl
+           border border-surface-border transition-all duration-150 active:scale-95;
+  }
+  .btn-ghost {
+    @apply text-[--text-muted] hover:text-[--text] hover:bg-surface-muted
+           font-medium px-4 py-2 rounded-lg transition-all duration-150;
+  }
+  .btn-danger {
+    @apply bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20
+           font-medium px-5 py-2.5 rounded-xl transition-all duration-150;
+  }
+
+  /* ── Form inputs ── */
+  .input {
+    @apply w-full bg-surface-muted border border-surface-border text-[--text]
+           placeholder:text-[--text-muted] rounded-xl px-4 py-2.5
+           focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30
+           transition-all duration-150 text-sm;
+  }
+  .label {
+    @apply block text-sm font-medium text-[--text-muted] mb-1.5;
+  }
+  .select {
+    @apply input appearance-none cursor-pointer;
+  }
+
+  /* ── Badges ── */
+  .badge {
+    @apply inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full;
+  }
+  .badge-blue   { @apply badge bg-brand-500/10 text-brand-300 border border-brand-500/20; }
+  .badge-green  { @apply badge bg-accent-500/10 text-accent-400 border border-accent-500/20; }
+  .badge-yellow { @apply badge bg-yellow-500/10 text-yellow-400 border border-yellow-500/20; }
+  .badge-red    { @apply badge bg-red-500/10 text-red-400 border border-red-500/20; }
+  .badge-muted  { @apply badge bg-surface-muted text-[--text-muted] border border-surface-border; }
+
+  /* ── Sidebar nav ── */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+           text-[--text-muted] hover:text-[--text] hover:bg-surface-muted
+           transition-all duration-150 cursor-pointer;
+  }
+  .nav-item.active {
+    @apply bg-brand-500/10 text-brand-300 border border-brand-500/20;
+  }
+
+  /* ── Stat cards ── */
+  .stat-card {
+    @apply card flex flex-col gap-1;
+  }
+  .stat-value {
+    @apply text-3xl font-bold font-display text-[--text];
+  }
+  .stat-label {
+    @apply text-sm text-[--text-muted];
+  }
+
+  /* ── Section headers ── */
+  .section-title {
+    @apply text-xl font-semibold font-display text-[--text];
+  }
+  .section-subtitle {
+    @apply text-sm text-[--text-muted] mt-0.5;
+  }
+
+  /* ── Progress bars ── */
+  .progress-bar {
+    @apply h-1.5 bg-surface-muted rounded-full overflow-hidden;
+  }
+  .progress-fill {
+    @apply h-full bg-brand-500 rounded-full transition-all duration-500;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    @apply border-t border-surface-border my-6;
+  }
+
+  /* ── Status dot ── */
+  .status-dot {
+    @apply w-2 h-2 rounded-full inline-block;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-400 to-accent-400;
+  }
+  .glow-brand {
+    box-shadow: 0 0 40px -10px #3b6ef066;
+  }
+  .animate-delay-100 { animation-delay: 100ms; }
+  .animate-delay-200 { animation-delay: 200ms; }
+  .animate-delay-300 { animation-delay: 300ms; }
+}
