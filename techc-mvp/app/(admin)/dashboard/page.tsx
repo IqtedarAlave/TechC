@@ -106,7 +106,9 @@ export default function AdminDashboard() {
                 </div>
               );
             })}
-            <Link href="/admin/submissions" className="btn-secondary w-full text-center text-sm mt-2">
+          </div>
+          <div className="mt-5">
+            <Link href="/admin/submissions" className="btn-secondary block w-full text-center text-sm">
               Review all submissions
             </Link>
           </div>

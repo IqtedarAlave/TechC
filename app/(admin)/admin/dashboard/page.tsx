@@ -174,7 +174,9 @@ export default async function AdminDashboard() {
             {pendingSubmissions.length === 0 && (
               <p className="text-sm text-[--text-muted] italic py-4 text-center">No submissions awaiting review</p>
             )}
-            <Link href="/admin/submissions" className="btn-secondary w-full text-center text-sm mt-10">
+          </div>
+          <div className="mt-5">
+            <Link href="/admin/submissions" className="btn-secondary block w-full text-center text-sm">
               Review all submissions
             </Link>
           </div>
