@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { z } from "zod";
+import { runAutoCheck } from "@/lib/autoCheck";
 
 const SubmitSchema = z.object({
   projectId: z.string().min(1),
@@ -50,7 +51,19 @@ export async function POST(req: NextRequest) {
       include: { project: true },
     });
 
-    return NextResponse.json({ submission }, { status: 201 });
+    // Run auto-check inline so the status is updated immediately
+    try {
+      await runAutoCheck(submission.id);
+    } catch (autoCheckErr) {
+      console.error("[AUTO_CHECK_ON_SUBMIT_FAILED]", autoCheckErr);
+    }
+
+    const finalSubmission = await prisma.projectSubmission.findUnique({
+      where: { id: submission.id },
+      include: { project: true },
+    });
+
+    return NextResponse.json({ submission: finalSubmission || submission }, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ message: err.errors[0].message }, { status: 422 });
