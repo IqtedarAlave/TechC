@@ -31,7 +31,7 @@ interface RoadmapProject {
 
 const STATUS_CONFIG: Record<string, { label: string; badge: string; icon: React.ReactNode; desc: string }> = {
   PENDING:         { label: "Checking...",   badge: "badge-muted animate-pulse",  icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-400" />, desc: "Automated check in progress..." },
-  AUTO_CHECKED:    { label: "AI Reviewing...",  badge: "badge-blue animate-pulse",   icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />, desc: "Passed automated check. AI review in progress..." },
+  AUTO_CHECKED:    { label: "Auto checked",  badge: "badge-blue",   icon: <CheckCircle className="w-3.5 h-3.5" />, desc: "Passed automated check. Queued for AI review." },
   AI_REVIEWED:     { label: "AI reviewed",   badge: "badge-yellow", icon: <CheckCircle className="w-3.5 h-3.5" />, desc: "AI review complete. Awaiting mentor." },
   MENTOR_APPROVED: { label: "✓ Verified",   badge: "badge-green",  icon: <CheckCircle className="w-3.5 h-3.5" />, desc: "Mentor approved. Badge issued." },
   REJECTED:        { label: "Rejected",      badge: "badge-red",    icon: <AlertCircle className="w-3.5 h-3.5" />, desc: "Submission rejected. See notes." },
@@ -299,20 +299,12 @@ export default function ProjectsPage() {
                       </>
                     )}
                   </div>
-                  <div className={`p-3 rounded-xl text-center transition-all ${sub.status === "AUTO_CHECKED" ? "bg-purple-500/5 animate-pulse border border-purple-500/20" : sub.aiReviewScore ? "bg-purple-500/10" : "bg-surface-muted"}`}>
+                  <div className={`p-3 rounded-xl text-center ${sub.aiReviewScore ? "bg-purple-500/10" : "bg-surface-muted"}`}>
                     <p className="text-xs text-[--text-muted] mb-1">AI review</p>
-                    {sub.status === "AUTO_CHECKED" ? (
-                      <div className="flex justify-center items-center h-8">
-                        <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
-                      </div>
-                    ) : (
-                      <>
-                        <p className={`text-lg font-bold font-display ${sub.aiReviewScore ? "text-purple-300" : "text-[--text-muted]"}`}>
-                          {sub.aiReviewScore ? `${sub.aiReviewScore}` : "—"}
-                        </p>
-                        {sub.aiReviewScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
-                      </>
-                    )}
+                    <p className={`text-lg font-bold font-display ${sub.aiReviewScore ? "text-purple-300" : "text-[--text-muted]"}`}>
+                      {sub.aiReviewScore ? `${sub.aiReviewScore}` : "—"}
+                    </p>
+                    {sub.aiReviewScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
                   </div>
                   <div className={`p-3 rounded-xl text-center ${sub.badgeUid ? "bg-accent-500/10" : "bg-surface-muted"}`}>
                     <p className="text-xs text-[--text-muted] mb-1">Mentor badge</p>
