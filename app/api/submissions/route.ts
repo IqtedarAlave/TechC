@@ -3,12 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { z } from "zod";
 import { runAutoCheck } from "@/lib/autoCheck";
-
-const SubmitSchema = z.object({
-  projectId: z.string().min(1),
-  githubUrl: z.string().url(),
-  description: z.string().optional(),
-});
+import { SubmissionSchema } from "@/lib/validations";
 
 /** POST /api/submissions — student submits a project */
 export async function POST(req: NextRequest) {
@@ -22,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const data = SubmitSchema.parse(body);
+    const data = SubmissionSchema.parse(body);
 
     const student = await prisma.studentProfile.findUnique({
       where: { userId: payload.id },

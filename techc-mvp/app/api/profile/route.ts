@@ -2,16 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { z } from "zod";
-
-const ProfileSchema = z.object({
-  name:         z.string().min(2).optional(),
-  bio:          z.string().max(200).optional(),
-  githubUrl:    z.string().url().optional().or(z.literal("")),
-  linkedinUrl:  z.string().url().optional().or(z.literal("")),
-  portfolioUrl: z.string().url().optional().or(z.literal("")),
-  skills:       z.array(z.string()).max(12).optional(),
-  isPublic:     z.boolean().optional(),
-});
+import { ProfileUpdateSchema } from "@/lib/validations";
 
 export async function PATCH(req: NextRequest) {
   const token = req.cookies.get("tc_session")?.value;
@@ -23,7 +14,7 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const data = ProfileSchema.parse(body);
+    const data = ProfileUpdateSchema.parse(body);
 
     // Update User.name if provided
     if (data.name) {

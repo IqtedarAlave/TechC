@@ -3,11 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { generateBadgeUid } from "@/lib/utils";
 import { z } from "zod";
-
-const ReviewSchema = z.object({
-  action: z.enum(["approve", "reject"]),
-  mentorNotes: z.string().min(10, "Mentor notes must be at least 10 characters"),
-});
+import { MentorReviewSchema } from "@/lib/validations";
 
 /** PATCH /api/admin/submissions/[id] — approve or reject */
 export async function PATCH(
@@ -24,7 +20,7 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const { action, mentorNotes } = ReviewSchema.parse(body);
+    const { action, mentorNotes } = MentorReviewSchema.parse(body);
 
     const existing = await prisma.projectSubmission.findUnique({
       where: { id: params.id },

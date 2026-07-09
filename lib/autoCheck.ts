@@ -22,8 +22,9 @@ export async function runAutoCheck(submissionId: string): Promise<AutoCheckOutco
     throw new Error("Submission not found");
   }
 
-  // Parse owner/repo from GitHub URL
-  const match = submission.githubUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+  // Parse owner/repo from GitHub URL, cleaning trailing slashes and any branch/subfolder path
+  const cleanedUrl = submission.githubUrl.replace(/\/+$/, "");
+  const match = cleanedUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
   if (!match) {
     const errorNotes = "Invalid GitHub URL — could not parse owner/repository.";
     await prisma.projectSubmission.update({
@@ -44,7 +45,11 @@ export async function runAutoCheck(submissionId: string): Promise<AutoCheckOutco
     };
   }
 
-  const [, owner, repo] = match;
+  const owner = match[1];
+  let repo = match[2];
+  if (repo.includes("/")) {
+    repo = repo.split("/")[0];
+  }
   const repoSlug = repo.replace(/\.git$/, "");
   const headers: Record<string, string> = {
     "Accept": "application/vnd.github+json",

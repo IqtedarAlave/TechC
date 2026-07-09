@@ -2,17 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { z } from "zod";
-
-const JobSchema = z.object({
-  title:        z.string().min(3),
-  description:  z.string().min(20),
-  requirements: z.array(z.string()).optional().default([]),
-  careerPath:   z.string().min(1),
-  jobType:      z.enum(["INTERNSHIP", "FULL_TIME", "PART_TIME", "CONTRACT"]),
-  salaryRange:  z.string().optional(),
-  location:     z.string().min(2),
-  deadline:     z.string().optional(),
-});
+import { JobSchema } from "@/lib/validations";
 
 /** GET /api/jobs — public job listings (filtered by path, type, location) */
 export async function GET(req: NextRequest) {

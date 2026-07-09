@@ -3,22 +3,12 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { signToken } from "@/lib/auth";
-
-const StudentSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
-  username: z.string().min(3).regex(/^[a-z0-9_]+$/),
-  university: z.string().min(2),
-  department: z.enum(["CSE", "EEE"]),
-  graduationYear: z.coerce.number().min(2024).max(2030),
-  careerPath: z.string().min(1),
-});
+import { StudentRegisterSchema } from "@/lib/validations";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const data = StudentSchema.parse(body);
+    const data = StudentRegisterSchema.parse(body);
 
     // Check uniqueness
     const existing = await prisma.user.findUnique({ where: { email: data.email } });

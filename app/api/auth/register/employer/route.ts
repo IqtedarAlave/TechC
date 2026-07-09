@@ -3,23 +3,12 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { signToken } from "@/lib/auth";
-
-const EmployerSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
-  companyName: z.string().min(2),
-  website: z.string().url().optional().or(z.literal("")),
-  industry: z.string().min(2),
-  size: z.string().min(1),
-  location: z.string().min(2),
-  description: z.string().optional(),
-});
+import { EmployerRegisterSchema } from "@/lib/validations";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const data = EmployerSchema.parse(body);
+    const data = EmployerRegisterSchema.parse(body);
 
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
     if (existing) {
