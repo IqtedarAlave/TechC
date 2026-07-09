@@ -51,19 +51,12 @@ export async function POST(req: NextRequest) {
       include: { project: true },
     });
 
-    // Run auto-check inline so the status is updated immediately
-    try {
-      await runAutoCheck(submission.id);
-    } catch (autoCheckErr) {
+    // Run auto-check in the background so the student submission completes without delay
+    runAutoCheck(submission.id).catch((autoCheckErr) => {
       console.error("[AUTO_CHECK_ON_SUBMIT_FAILED]", autoCheckErr);
-    }
-
-    const finalSubmission = await prisma.projectSubmission.findUnique({
-      where: { id: submission.id },
-      include: { project: true },
     });
 
-    return NextResponse.json({ submission: finalSubmission || submission }, { status: 201 });
+    return NextResponse.json({ submission }, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ message: err.errors[0].message }, { status: 422 });
