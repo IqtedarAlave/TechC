@@ -30,8 +30,8 @@ interface RoadmapProject {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; badge: string; icon: React.ReactNode; desc: string }> = {
-  PENDING:         { label: "Pending",       badge: "badge-muted",  icon: <Clock className="w-3.5 h-3.5" />, desc: "Queued for automated check" },
-  AUTO_CHECKED:    { label: "Auto checked",  badge: "badge-blue",   icon: <CheckCircle className="w-3.5 h-3.5" />, desc: "Passed automated check. Queued for AI review." },
+  PENDING:         { label: "Checking...",   badge: "badge-muted animate-pulse",  icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-400" />, desc: "Automated check in progress..." },
+  AUTO_CHECKED:    { label: "AI Reviewing...",  badge: "badge-blue animate-pulse",   icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />, desc: "Passed automated check. AI review in progress..." },
   AI_REVIEWED:     { label: "AI reviewed",   badge: "badge-yellow", icon: <CheckCircle className="w-3.5 h-3.5" />, desc: "AI review complete. Awaiting mentor." },
   MENTOR_APPROVED: { label: "✓ Verified",   badge: "badge-green",  icon: <CheckCircle className="w-3.5 h-3.5" />, desc: "Mentor approved. Badge issued." },
   REJECTED:        { label: "Rejected",      badge: "badge-red",    icon: <AlertCircle className="w-3.5 h-3.5" />, desc: "Submission rejected. See notes." },
@@ -80,6 +80,28 @@ export default function ProjectsPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const hasTransitional = submissions.some(
+      (sub) => sub.status === "PENDING" || sub.status === "AUTO_CHECKED"
+    );
+
+    if (!hasTransitional) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch("/api/submissions");
+        if (res.ok) {
+          const data = await res.json();
+          setSubmissions(data.submissions || []);
+        }
+      } catch (err) {
+        console.error("Error polling submissions status:", err);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [submissions]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -260,21 +282,37 @@ export default function ProjectsPage() {
                   <span className={`${s.badge} flex items-center gap-1`}>{s.icon} {s.label}</span>
                 </div>
 
-                {/* Validation progress */}
+                 {/* Validation progress */}
                 <div className="grid grid-cols-3 gap-3">
-                  <div className={`p-3 rounded-xl text-center ${sub.autoCheckScore ? "bg-brand-500/10" : "bg-surface-muted"}`}>
+                  <div className={`p-3 rounded-xl text-center transition-all ${sub.status === "PENDING" ? "bg-brand-500/5 animate-pulse border border-brand-500/20" : sub.autoCheckScore ? "bg-brand-500/10" : "bg-surface-muted"}`}>
                     <p className="text-xs text-[--text-muted] mb-1">Auto check</p>
-                    <p className={`text-lg font-bold font-display ${sub.autoCheckScore ? "text-brand-300" : "text-[--text-muted]"}`}>
-                      {sub.autoCheckScore ? `${sub.autoCheckScore}` : "—"}
-                    </p>
-                    {sub.autoCheckScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
+                    {sub.status === "PENDING" ? (
+                      <div className="flex justify-center items-center h-8">
+                        <Loader2 className="w-5 h-5 animate-spin text-brand-400" />
+                      </div>
+                    ) : (
+                      <>
+                        <p className={`text-lg font-bold font-display ${sub.autoCheckScore ? "text-brand-300" : "text-[--text-muted]"}`}>
+                          {sub.autoCheckScore ? `${sub.autoCheckScore}` : "—"}
+                        </p>
+                        {sub.autoCheckScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
+                      </>
+                    )}
                   </div>
-                  <div className={`p-3 rounded-xl text-center ${sub.aiReviewScore ? "bg-purple-500/10" : "bg-surface-muted"}`}>
+                  <div className={`p-3 rounded-xl text-center transition-all ${sub.status === "AUTO_CHECKED" ? "bg-purple-500/5 animate-pulse border border-purple-500/20" : sub.aiReviewScore ? "bg-purple-500/10" : "bg-surface-muted"}`}>
                     <p className="text-xs text-[--text-muted] mb-1">AI review</p>
-                    <p className={`text-lg font-bold font-display ${sub.aiReviewScore ? "text-purple-300" : "text-[--text-muted]"}`}>
-                      {sub.aiReviewScore ? `${sub.aiReviewScore}` : "—"}
-                    </p>
-                    {sub.aiReviewScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
+                    {sub.status === "AUTO_CHECKED" ? (
+                      <div className="flex justify-center items-center h-8">
+                        <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+                      </div>
+                    ) : (
+                      <>
+                        <p className={`text-lg font-bold font-display ${sub.aiReviewScore ? "text-purple-300" : "text-[--text-muted]"}`}>
+                          {sub.aiReviewScore ? `${sub.aiReviewScore}` : "—"}
+                        </p>
+                        {sub.aiReviewScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
+                      </>
+                    )}
                   </div>
                   <div className={`p-3 rounded-xl text-center ${sub.badgeUid ? "bg-accent-500/10" : "bg-surface-muted"}`}>
                     <p className="text-xs text-[--text-muted] mb-1">Mentor badge</p>
