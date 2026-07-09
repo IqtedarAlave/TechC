@@ -147,7 +147,8 @@ export default function AdminSettingsPage() {
           {[
             { label: "JWT secret", value: "Set via JWT_SECRET env var", status: "ok" },
             { label: "Database URL", value: "Set via DATABASE_URL env var", status: "ok" },
-            { label: "Anthropic API key", value: process.env.ANTHROPIC_API_KEY ? "Configured" : "Not set — AI review disabled", status: process.env.ANTHROPIC_API_KEY ? "ok" : "warn" },
+            { label: "Anthropic API key", value: process.env.ANTHROPIC_API_KEY ? "Configured" : "Not set", status: process.env.ANTHROPIC_API_KEY ? "ok" : (process.env.OPENROUTER_API_KEY ? "info" : "warn") },
+            { label: "OpenRouter API key", value: process.env.OPENROUTER_API_KEY ? "Configured" : "Not set", status: process.env.OPENROUTER_API_KEY ? "ok" : (process.env.ANTHROPIC_API_KEY ? "info" : "warn") },
             { label: "GitHub token", value: "Optional — set GITHUB_TOKEN for higher rate limits", status: "info" },
           ].map(({ label, value, status }) => (
             <div key={label} className="flex items-center justify-between">

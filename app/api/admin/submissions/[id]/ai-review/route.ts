@@ -35,8 +35,11 @@ export async function POST(
       );
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    const openrouterKey = process.env.OPENROUTER_API_KEY;
+    const openrouterModel = process.env.OPENROUTER_MODEL || "google/gemma-2-9b-it:free";
+
+    if (!anthropicKey && !openrouterKey) {
       const mockResult = {
         score: 85,
         notes: "The repository demonstrates solid code quality and structure with clear component organization. The commit history shows a clean, step-by-step development process. To improve, consider adding more descriptive comments in complex business logic functions."
@@ -57,7 +60,7 @@ export async function POST(
       });
     }
 
-    // Call Claude to review the submission
+    // Call AI to review the submission
     const prompt = `You are a senior software engineer reviewing a student project submission for TechC, a career platform for Bangladeshi CS/EE students.
 
 Project: "${submission.project.title}"
@@ -79,28 +82,55 @@ Respond ONLY with a JSON object, no markdown, no explanation:
   "notes": "<2-3 sentences of specific, actionable feedback mentioning what was done well and what could be improved>"
 }`;
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-3-5-sonnet-latest",
-        max_tokens: 300,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
+    let rawText = "{}";
 
-    if (!response.ok) {
-      const err = await response.text();
-      console.error("[AI_REVIEW] Anthropic error:", err);
-      return NextResponse.json({ message: "AI review failed" }, { status: 502 });
+    if (openrouterKey) {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openrouterKey}`,
+          "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+          "X-Title": "TechC",
+        },
+        body: JSON.stringify({
+          model: openrouterModel,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.text();
+        console.error("[AI_REVIEW] OpenRouter error:", err);
+        return NextResponse.json({ message: "AI review failed via OpenRouter" }, { status: 502 });
+      }
+
+      const aiData = await response.json();
+      rawText = aiData.choices?.[0]?.message?.content ?? "{}";
+    } else {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": anthropicKey!,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-3-5-sonnet-latest",
+          max_tokens: 300,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+
+      if (!response.ok) {
+        const err = await response.text();
+        console.error("[AI_REVIEW] Anthropic error:", err);
+        return NextResponse.json({ message: "AI review failed via Anthropic" }, { status: 502 });
+      }
+
+      const aiData = await response.json();
+      rawText = aiData.content?.[0]?.text ?? "{}";
     }
-
-    const aiData = await response.json();
-    const rawText = aiData.content?.[0]?.text ?? "{}";
 
     let parsed: { score: number; notes: string };
     try {
