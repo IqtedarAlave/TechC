@@ -154,7 +154,9 @@ export default function StudentRegisterPage() {
               <label className="label">Expected graduation year</label>
               <select className="select" value={form.graduationYear} onChange={(e) => update("graduationYear", e.target.value)}>
                 <option value="">Select year</option>
-                {[2024, 2025, 2026, 2027, 2028].map((y) => <option key={y} value={y}>{y}</option>)}
+                {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() + i).map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
               </select>
             </div>
           </div>
