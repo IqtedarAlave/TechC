@@ -92,6 +92,35 @@ export default function ProfilePage() {
     setForm((f) => ({ ...f, skills: f.skills.filter((x) => x !== sk) }));
   }
 
+  async function handleTogglePublic() {
+    const newVal = !form.isPublic;
+    setForm((f) => ({ ...f, isPublic: newVal }));
+
+    if (!editing) {
+      setSaving(true);
+      try {
+        const res = await fetch("/api/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isPublic: newVal }),
+        });
+        if (res.ok) {
+          toast("success", `Portfolio is now ${newVal ? "public" : "private"}`);
+          setInitialData((d) => ({ ...d, isPublic: newVal }));
+        } else {
+          const d = await res.json();
+          toast("error", d.message || "Failed to update visibility");
+          setForm((f) => ({ ...f, isPublic: !newVal }));
+        }
+      } catch {
+        toast("error", "Something went wrong");
+        setForm((f) => ({ ...f, isPublic: !newVal }));
+      } finally {
+        setSaving(false);
+      }
+    }
+  }
+
   async function handleSave() {
     setSaving(true);
     try {
@@ -165,8 +194,8 @@ export default function ProfilePage() {
             {form.isPublic ? "Visible to employers and search engines" : "Hidden — only you can see it"}
           </p>
         </div>
-        <button onClick={() => update("isPublic", !form.isPublic)}
-          className={`relative w-11 h-6 rounded-full transition-colors ${form.isPublic ? "bg-accent-500" : "bg-surface-muted"}`}>
+        <button onClick={handleTogglePublic} disabled={saving}
+          className={`relative w-11 h-6 rounded-full transition-colors ${form.isPublic ? "bg-accent-500" : "bg-surface-muted"} ${saving ? "opacity-60 cursor-not-allowed" : ""}`}>
           <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${form.isPublic ? "left-6" : "left-1"}`} />
         </button>
       </div>
