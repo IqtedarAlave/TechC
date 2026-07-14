@@ -1,56 +1,99 @@
 import { Metadata } from "next";
 import { Shield, GitBranch, ExternalLink, Github, Linkedin, Globe } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { notFound } from "next/navigation";
+import { CAREER_PATH_LABELS } from "@/lib/utils";
 
-// In production: fetch from DB by username
-const MOCK_STUDENT = {
-  name: "Iqtedar Hossain",
-  username: "iqtedar",
-  university: "BUET",
-  department: "CSE",
-  graduationYear: 2025,
-  careerPath: "Web Development",
-  bio: "Final-year CSE student passionate about building scalable web apps. Currently working on my first SaaS product.",
-  githubUrl: "https://github.com/iqtedar",
-  linkedinUrl: "https://linkedin.com/in/iqtedar",
-  skills: ["React", "Node.js", "PostgreSQL", "TypeScript", "Tailwind CSS", "Next.js"],
-  badges: [
-    {
-      uid: "tc_a3f9d2b1e7",
-      projectTitle: "Portfolio Website",
-      difficulty: "Junior",
-      path: "Web Development",
-      autoScore: 92,
-      aiScore: 89,
-      approvedAt: "June 1, 2024",
-    },
-  ],
-  projects: [
-    {
-      title: "Portfolio Website",
-      githubUrl: "https://github.com/iqtedar/portfolio",
-      description: "Personal portfolio built with Next.js and Tailwind. Deployed on Vercel.",
-      skills: ["Next.js", "Tailwind"],
-      status: "MENTOR_APPROVED",
-    },
-    {
-      title: "REST API with Node.js",
-      githubUrl: "https://github.com/iqtedar/rest-api",
-      description: "Full CRUD REST API with JWT auth, PostgreSQL, and Prisma ORM.",
-      skills: ["Node.js", "PostgreSQL", "JWT"],
-      status: "AI_REVIEWED",
-    },
-  ],
-};
+function ensureAbsoluteUrl(url: string | null | undefined) {
+  if (!url) return "";
+  const trimUrl = url.trim();
+  if (trimUrl === "") return "";
+  if (/^https?:\/\//i.test(trimUrl)) return trimUrl;
+  return `https://${trimUrl}`;
+}
 
 export async function generateMetadata({ params }: { params: { username: string } }): Promise<Metadata> {
+  const profile = await prisma.studentProfile.findUnique({
+    where: { username: params.username },
+    include: { user: true },
+  });
+
+  if (!profile || !profile.isPublic) {
+    return {
+      title: "Profile Not Found",
+    };
+  }
+
   return {
-    title: `${MOCK_STUDENT.name} — TechC Portfolio`,
-    description: MOCK_STUDENT.bio,
+    title: `${profile.user.name} — TechC Portfolio`,
+    description: profile.bio || "",
   };
 }
 
-export default function PublicPortfolioPage({ params }: { params: { username: string } }) {
-  const s = MOCK_STUDENT;
+export default async function PublicPortfolioPage({ params }: { params: { username: string } }) {
+  const profile = await prisma.studentProfile.findUnique({
+    where: { username: params.username },
+    include: {
+      user: true,
+      submissions: {
+        where: {
+          status: {
+            in: ["PENDING", "AUTO_CHECKED", "AI_REVIEWED", "MENTOR_APPROVED"],
+          },
+        },
+        include: {
+          project: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      },
+    },
+  });
+
+  if (!profile || !profile.isPublic) {
+    notFound();
+  }
+
+  // Filter submissions for mentor approved badges
+  const badges = profile.submissions
+    .filter((sub) => sub.status === "MENTOR_APPROVED" && sub.badgeUid)
+    .map((sub) => ({
+      uid: sub.badgeUid!,
+      projectTitle: sub.project.title,
+      difficulty: sub.project.difficulty,
+      path: CAREER_PATH_LABELS[profile.careerPath || ""] || profile.careerPath || "",
+      autoScore: sub.autoCheckScore ?? 0,
+      aiScore: sub.aiReviewScore ?? 0,
+      approvedAt: sub.mentorApprovedAt ? new Date(sub.mentorApprovedAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }) : "",
+    }));
+
+  const projects = profile.submissions.map((sub) => ({
+    title: sub.project.title,
+    githubUrl: sub.githubUrl,
+    description: sub.description || sub.project.description,
+    skills: sub.project.skills,
+    status: sub.status,
+  }));
+
+  const s = {
+    name: profile.user.name,
+    username: profile.username,
+    university: profile.university,
+    department: profile.department,
+    graduationYear: profile.graduationYear,
+    careerPath: CAREER_PATH_LABELS[profile.careerPath || ""] || profile.careerPath || "No Track Selected",
+    bio: profile.bio || "No bio added yet.",
+    githubUrl: profile.githubUrl,
+    linkedinUrl: profile.linkedinUrl,
+    skills: profile.skills,
+    badges: badges,
+    projects: projects,
+  };
 
   return (
     <div className="min-h-screen bg-[#0f1117]">
@@ -86,13 +129,13 @@ export default function PublicPortfolioPage({ params }: { params: { username: st
             <p className="text-sm text-[--text] leading-relaxed max-w-xl mb-4">{s.bio}</p>
             <div className="flex flex-wrap gap-3">
               {s.githubUrl && (
-                <a href={s.githubUrl} target="_blank" rel="noopener noreferrer"
+                <a href={ensureAbsoluteUrl(s.githubUrl)} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-[--text] transition-colors">
                   <Github className="w-4 h-4" /> GitHub
                 </a>
               )}
               {s.linkedinUrl && (
-                <a href={s.linkedinUrl} target="_blank" rel="noopener noreferrer"
+                <a href={ensureAbsoluteUrl(s.linkedinUrl)} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 text-sm text-[--text-muted] hover:text-[--text] transition-colors">
                   <Linkedin className="w-4 h-4" /> LinkedIn
                 </a>
@@ -102,12 +145,14 @@ export default function PublicPortfolioPage({ params }: { params: { username: st
         </div>
 
         {/* Skills */}
-        <div className="card">
-          <h2 className="section-title mb-4">Skills</h2>
-          <div className="flex flex-wrap gap-2">
-            {s.skills.map((sk) => <span key={sk} className="badge-blue">{sk}</span>)}
+        {s.skills && s.skills.length > 0 && (
+          <div className="card">
+            <h2 className="section-title mb-4">Skills</h2>
+            <div className="flex flex-wrap gap-2">
+              {s.skills.map((sk) => <span key={sk} className="badge-blue">{sk}</span>)}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Verified badges */}
         {s.badges.length > 0 && (
@@ -157,33 +202,37 @@ export default function PublicPortfolioPage({ params }: { params: { username: st
         )}
 
         {/* Projects */}
-        <div>
-          <h2 className="section-title mb-4">Projects</h2>
-          <div className="space-y-4">
-            {s.projects.map((p) => (
-              <div key={p.title} className="card-hover">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-400">
-                      <GitBranch className="w-4 h-4" />
+        {s.projects && s.projects.length > 0 && (
+          <div>
+            <h2 className="section-title mb-4">Projects</h2>
+            <div className="space-y-4">
+              {s.projects.map((p) => (
+                <div key={p.title} className="card-hover">
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-400">
+                        <GitBranch className="w-4 h-4" />
+                      </div>
+                      <p className="font-semibold text-[--text]">{p.title}</p>
                     </div>
-                    <p className="font-semibold text-[--text]">{p.title}</p>
+                    {p.status === "MENTOR_APPROVED" && <span className="badge-green text-[10px]">✓ Verified</span>}
+                    {p.status === "AI_REVIEWED" && <span className="badge-yellow text-[10px]">AI reviewed</span>}
+                    {p.status === "AUTO_CHECKED" && <span className="badge-blue text-[10px]">Auto checked</span>}
+                    {p.status === "PENDING" && <span className="badge-muted text-[10px]">Pending review</span>}
                   </div>
-                  {p.status === "MENTOR_APPROVED" && <span className="badge-green text-[10px]">✓ Verified</span>}
-                  {p.status === "AI_REVIEWED" && <span className="badge-yellow text-[10px]">AI reviewed</span>}
+                  <p className="text-sm text-[--text-muted] mb-3">{p.description}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {p.skills.map((sk) => <span key={sk} className="badge-muted text-[10px]">{sk}</span>)}
+                    <a href={ensureAbsoluteUrl(p.githubUrl)} target="_blank" rel="noopener noreferrer"
+                      className="ml-auto flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300">
+                      View on GitHub <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
                 </div>
-                <p className="text-sm text-[--text-muted] mb-3">{p.description}</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  {p.skills.map((sk) => <span key={sk} className="badge-muted text-[10px]">{sk}</span>)}
-                  <a href={p.githubUrl} target="_blank" rel="noopener noreferrer"
-                    className="ml-auto flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300">
-                    View on GitHub <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Footer */}
         <div className="border-t border-surface-border pt-6 flex items-center justify-between">
