@@ -62,7 +62,7 @@ export const ProfileUpdateSchema = z.object({
 
 // ── Project submission ──────────────────────────────────────────────
 export const SubmissionSchema = z.object({
-  projectId:   z.string().cuid("Invalid project ID"),
+  projectId:   z.string().min(1, "Invalid project ID"),
   githubUrl:   z.string().url("Must be a valid GitHub URL")
                  .refine((u) => u.includes("github.com"), "Must be a GitHub repository URL"),
   description: z.string().max(500).optional(),
