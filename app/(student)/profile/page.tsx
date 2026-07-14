@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Github, Linkedin, Globe, Edit3, Save, X, Loader2, User, GraduationCap, Code2 } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 
@@ -18,29 +18,66 @@ const CAREER_PATH_LABELS: Record<string, string> = {
   DATA_SCIENCE: "Data Science", UI_UX: "UI / UX Design", DEVOPS: "DevOps",
 };
 
-// Mock — replace with real session + DB fetch
 const INITIAL = {
-  name: "Iqtedar Hossain",
-  username: "iqtedar",
-  email: "iqtedar@buet.ac.bd",
-  university: "BUET",
-  department: "CSE",
+  name: "",
+  username: "",
+  email: "",
+  university: "",
+  department: "",
   graduationYear: 2025,
-  careerPath: "WEB_DEV",
-  bio: "Final-year CSE student building TechC. Interested in scalable web systems and developer tooling.",
-  githubUrl: "https://github.com/iqtedar",
-  linkedinUrl: "https://linkedin.com/in/iqtedar",
+  careerPath: "",
+  bio: "",
+  githubUrl: "",
+  linkedinUrl: "",
   portfolioUrl: "",
-  skills: ["React", "Next.js", "PostgreSQL", "TypeScript", "Node.js"],
+  skills: [] as string[],
   isPublic: true,
 };
 
 export default function ProfilePage() {
   const [form, setForm] = useState(INITIAL);
+  const [initialData, setInitialData] = useState(INITIAL);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [skillInput, setSkillInput] = useState("");
   const { toast } = useToast();
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const res = await fetch("/api/profile");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            const student = data.user.studentProfile || {};
+            const profileData = {
+              name: data.user.name || "",
+              username: student.username || "",
+              email: data.user.email || "",
+              university: student.university || "",
+              department: student.department || "",
+              graduationYear: student.graduationYear || 2025,
+              careerPath: student.careerPath || "",
+              bio: student.bio || "",
+              githubUrl: student.githubUrl || "",
+              linkedinUrl: student.linkedinUrl || "",
+              portfolioUrl: student.portfolioUrl || "",
+              skills: student.skills || [],
+              isPublic: student.isPublic !== false,
+            };
+            setForm(profileData);
+            setInitialData(profileData);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading profile:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProfile();
+  }, []);
 
   const update = (k: string, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -65,6 +102,7 @@ export default function ProfilePage() {
       });
       if (res.ok) {
         toast("success", "Profile updated successfully");
+        setInitialData(form);
         setEditing(false);
       } else {
         const d = await res.json();
@@ -75,6 +113,15 @@ export default function ProfilePage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 text-[--text-muted]">
+        <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
+        <p className="text-sm">Loading profile...</p>
+      </div>
+    );
   }
 
   return (
@@ -97,7 +144,7 @@ export default function ProfilePage() {
           </button>
         ) : (
           <div className="flex gap-2">
-            <button onClick={() => { setEditing(false); setForm(INITIAL); }}
+            <button onClick={() => { setEditing(false); setForm(initialData); }}
               className="btn-ghost text-sm flex items-center gap-1.5">
               <X className="w-4 h-4" /> Cancel
             </button>
