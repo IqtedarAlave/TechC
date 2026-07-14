@@ -40,12 +40,22 @@ export const EmployerRegisterSchema = z.object({
 });
 
 // ── Student profile update ──────────────────────────────────────────
+const optionalUrlSchema = z.preprocess((val) => {
+  if (typeof val !== "string") return val;
+  const s = val.trim();
+  if (s === "") return "";
+  if (!/^https?:\/\//i.test(s)) {
+    return `https://${s}`;
+  }
+  return s;
+}, z.string().url("Invalid URL format").or(z.literal("")));
+
 export const ProfileUpdateSchema = z.object({
   name:         z.string().min(2).optional(),
   bio:          z.string().max(200).optional(),
-  githubUrl:    z.string().url().optional().or(z.literal("")),
-  linkedinUrl:  z.string().url().optional().or(z.literal("")),
-  portfolioUrl: z.string().url().optional().or(z.literal("")),
+  githubUrl:    optionalUrlSchema.optional(),
+  linkedinUrl:  optionalUrlSchema.optional(),
+  portfolioUrl: optionalUrlSchema.optional(),
   skills:       z.array(z.string().max(30)).max(12).optional(),
   isPublic:     z.boolean().optional(),
 });
