@@ -1,6 +1,6 @@
 import { Skeleton, StatsSkeleton } from "@/components/ui/Skeleton";
 
-export default function StudentLoading() {
+export default function StudentDashboardLoading() {
   return (
     <div className="space-y-8 animate-fade-up">
       {/* Header */}
