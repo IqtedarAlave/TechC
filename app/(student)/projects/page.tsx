@@ -146,9 +146,11 @@ export default function ProjectsPage() {
     }
   }
 
-  // Filter out roadmap projects that have already been submitted
-  const submittedProjectIds = submissions.map((s) => s.projectId);
-  const availableProjects = roadmapProjects.filter((p) => !submittedProjectIds.includes(p.id));
+  // Filter out roadmap projects that have an approved submission
+  const approvedProjectIds = submissions
+    .filter((s) => s.status === "MENTOR_APPROVED")
+    .map((s) => s.projectId);
+  const availableProjects = roadmapProjects.filter((p) => !approvedProjectIds.includes(p.id));
 
   return (
     <div className="space-y-8 animate-fade-up">

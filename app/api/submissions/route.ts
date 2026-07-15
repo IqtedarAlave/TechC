@@ -29,11 +29,39 @@ export async function POST(req: NextRequest) {
       where: { studentId: student.id, projectId: data.projectId },
     });
     if (existing) {
-      return NextResponse.json(
-        { message: "You already submitted this project" },
-        { status: 400 }
-      );
+      if (existing.status === "MENTOR_APPROVED") {
+        return NextResponse.json(
+          { message: "This project has already been verified and approved" },
+          { status: 400 }
+        );
+      }
+
+      // Update and reset existing submission to restart validation pipeline
+      const submission = await prisma.projectSubmission.update({
+        where: { id: existing.id },
+        data: {
+          githubUrl: data.githubUrl,
+          description: data.description ?? null,
+          status: "PENDING",
+          autoCheckScore: null,
+          autoCheckNotes: null,
+          aiReviewScore: null,
+          aiReviewNotes: null,
+          mentorNotes: null,
+          mentorApprovedAt: null,
+          badgeUid: null,
+        },
+        include: { project: true },
+      });
+
+      // Run auto-check in the background so the student submission completes without delay
+      runAutoCheck(submission.id).catch((autoCheckErr) => {
+        console.error("[AUTO_CHECK_ON_SUBMIT_FAILED]", autoCheckErr);
+      });
+
+      return NextResponse.json({ submission }, { status: 200 });
     }
+
 
     const submission = await prisma.projectSubmission.create({
       data: {

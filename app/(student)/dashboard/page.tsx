@@ -66,6 +66,8 @@ export default function StudentDashboard() {
         let path = "";
         let submittedIds: string[] = [];
 
+        let approvedIds: string[] = [];
+
         if (profRes.ok) {
           const profData = await profRes.json();
           setProfile(profData.user);
@@ -76,7 +78,7 @@ export default function StudentDashboard() {
           const subData = await subRes.json();
           const subs: Submission[] = subData.submissions || [];
           setSubmissions(subs);
-          submittedIds = subs.map((s) => s.project.id);
+          approvedIds = subs.filter((s) => s.status === "MENTOR_APPROVED").map((s) => s.project.id);
         }
 
         // Fetch roadmap to get next projects
@@ -85,8 +87,8 @@ export default function StudentDashboard() {
           if (rmRes.ok) {
             const rmData = await rmRes.json();
             const allProjects: RoadmapProject[] = rmData.roadmap?.projects || [];
-            // Next projects are those which haven't been submitted yet
-            const uncompleted = allProjects.filter((p) => !submittedIds.includes(p.id));
+            // Next projects are those which haven't been approved yet
+            const uncompleted = allProjects.filter((p) => !approvedIds.includes(p.id));
             setNextProjects(uncompleted.slice(0, 2));
           }
 
