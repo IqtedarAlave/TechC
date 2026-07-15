@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { GitBranch, Upload, CheckCircle, Clock, AlertCircle, ExternalLink, Loader2 } from "lucide-react";
+import { AutoCheckLoader, AiReviewLoader, MentorLoader } from "@/components/student/PipelineLoader";
+
 
 interface Submission {
   id: string;
@@ -284,37 +286,47 @@ export default function ProjectsPage() {
 
                  {/* Validation progress */}
                 <div className="grid grid-cols-3 gap-3">
-                  <div className={`p-3 rounded-xl text-center transition-all ${sub.status === "PENDING" ? "bg-brand-500/5 animate-pulse border border-brand-500/20" : sub.autoCheckScore ? "bg-brand-500/10" : "bg-surface-muted"}`}>
-                    <p className="text-xs text-[--text-muted] mb-1">Auto check</p>
-                    {sub.status === "PENDING" ? (
-                      <div className="flex justify-center items-center h-8">
-                        <Loader2 className="w-5 h-5 animate-spin text-brand-400" />
-                      </div>
-                    ) : (
-                      <>
-                        <p className={`text-lg font-bold font-display ${sub.autoCheckScore ? "text-brand-300" : "text-[--text-muted]"}`}>
-                          {sub.autoCheckScore ? `${sub.autoCheckScore}` : "—"}
-                        </p>
-                        {sub.autoCheckScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
-                      </>
-                    )}
-                  </div>
-                  <div className={`p-3 rounded-xl text-center ${sub.aiReviewScore ? "bg-purple-500/10" : "bg-surface-muted"}`}>
-                    <p className="text-xs text-[--text-muted] mb-1">AI review</p>
-                    <p className={`text-lg font-bold font-display ${sub.aiReviewScore ? "text-purple-300" : "text-[--text-muted]"}`}>
-                      {sub.aiReviewScore ? `${sub.aiReviewScore}` : "—"}
-                    </p>
-                    {sub.aiReviewScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
-                  </div>
-                  <div className={`p-3 rounded-xl text-center ${sub.badgeUid ? "bg-accent-500/10" : "bg-surface-muted"}`}>
-                    <p className="text-xs text-[--text-muted] mb-1">Mentor badge</p>
-                    {sub.badgeUid ? (
-                      <p className="text-accent-400 text-xs font-mono break-all">{sub.badgeUid}</p>
-                    ) : (
-                      <p className="text-[--text-muted] text-lg font-bold">—</p>
-                    )}
-                  </div>
+                  {/* Layer 1: Auto check */}
+                  {sub.status === "PENDING" ? (
+                    <AutoCheckLoader />
+                  ) : (
+                    <div className={`p-3 rounded-xl text-center transition-all ${sub.autoCheckScore ? "bg-brand-500/10 border border-brand-500/20" : "bg-surface-muted"}`}>
+                      <p className="text-xs text-[--text-muted] mb-1">Auto check</p>
+                      <p className={`text-lg font-bold font-display ${sub.autoCheckScore ? "text-brand-300" : "text-[--text-muted]"}`}>
+                        {sub.autoCheckScore ? `${sub.autoCheckScore}` : "—"}
+                      </p>
+                      {sub.autoCheckScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
+                    </div>
+                  )}
+
+                  {/* Layer 2: AI Review */}
+                  {sub.status === "AUTO_CHECKED" ? (
+                    <AiReviewLoader />
+                  ) : (
+                    <div className={`p-3 rounded-xl text-center transition-all ${sub.aiReviewScore ? "bg-purple-500/10 border border-purple-500/20" : "bg-surface-muted"}`}>
+                      <p className="text-xs text-[--text-muted] mb-1">AI review</p>
+                      <p className={`text-lg font-bold font-display ${sub.aiReviewScore ? "text-purple-300" : "text-[--text-muted]"}`}>
+                        {sub.aiReviewScore ? `${sub.aiReviewScore}` : "—"}
+                      </p>
+                      {sub.aiReviewScore && <p className="text-[10px] text-[--text-muted]">/100</p>}
+                    </div>
+                  )}
+
+                  {/* Layer 3: Mentor badge */}
+                  {sub.status === "AI_REVIEWED" ? (
+                    <MentorLoader />
+                  ) : (
+                    <div className={`p-3 rounded-xl text-center transition-all ${sub.badgeUid ? "bg-accent-500/10 border border-accent-500/20" : "bg-surface-muted"}`}>
+                      <p className="text-xs text-[--text-muted] mb-1">Mentor badge</p>
+                      {sub.badgeUid ? (
+                        <p className="text-accent-400 text-xs font-mono break-all">{sub.badgeUid}</p>
+                      ) : (
+                        <p className="text-[--text-muted] text-lg font-bold">—</p>
+                      )}
+                    </div>
+                  )}
                 </div>
+
 
                 <p className="text-xs text-[--text-muted] mt-3">{s.desc}</p>
               </div>

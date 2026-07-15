@@ -159,4 +159,38 @@
   .animate-delay-100 { animation-delay: 100ms; }
   .animate-delay-200 { animation-delay: 200ms; }
   .animate-delay-300 { animation-delay: 300ms; }
+
+  /* ── Submission Pipeline Loaders ── */
+  @keyframes pipeline-scan {
+    0%, 100% { top: 0%; opacity: 0.2; }
+    50% { top: 100%; opacity: 1; }
+  }
+  .animate-pipeline-scan {
+    animation: pipeline-scan 2s ease-in-out infinite;
+  }
+
+  @keyframes pipeline-float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+  .animate-pipeline-float {
+    animation: pipeline-float 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pipeline-clock {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .animate-pipeline-clock {
+    animation: pipeline-clock 6s linear infinite;
+  }
+
+  @keyframes pipeline-progress {
+    0% { width: 0%; }
+    100% { width: 100%; }
+  }
+  .animate-pipeline-progress {
+    animation: pipeline-progress 2.5s ease-in-out infinite;
+  }
 }
+
