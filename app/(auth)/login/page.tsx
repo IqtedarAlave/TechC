@@ -60,9 +60,9 @@ export default function LoginPage() {
             animation: drop-c 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
           }
         `}</style>
-        <div className="text-6xl md:text-7xl font-display font-bold text-white flex items-end tracking-tight">
+        <div className="text-[20vw] font-display font-bold text-white flex items-end tracking-tight leading-none">
           <span className="z-10">Tech</span>
-          <span className="animate-drop-c text-brand-400 inline-block origin-bottom-left -ml-1">C</span>
+          <span className="animate-drop-c text-brand-400 inline-block origin-bottom-left -ml-[2vw]">C</span>
         </div>
       </div>
     );
