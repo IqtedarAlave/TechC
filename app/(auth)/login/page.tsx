@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successAnimation, setSuccessAnimation] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -26,14 +27,45 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) { setError(data.message || "Login failed"); setLoading(false); return; }
 
-      // Redirect by role
-      if (data.role === "STUDENT") window.location.href = "/dashboard";
-      else if (data.role === "EMPLOYER") window.location.href = "/employer/dashboard";
-      else if (data.role === "ADMIN") window.location.href = "/admin/dashboard";
+      // Trigger animation instead of immediate redirect
+      let redirectUrl = "/dashboard";
+      if (data.role === "EMPLOYER") redirectUrl = "/employer/dashboard";
+      else if (data.role === "ADMIN") redirectUrl = "/admin/dashboard";
+
+      setSuccessAnimation(redirectUrl);
+
+      // Wait for animation to finish (2.5s) before redirecting
+      setTimeout(() => {
+        window.location.href = redirectUrl;
+      }, 2500);
+
     } catch {
       setError("Something went wrong. Try again.");
       setLoading(false);
     }
+  }
+
+  if (successAnimation) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[--background]">
+        <style>{`
+          @keyframes drop-c {
+            0% { transform: translate(20px, -200px) rotate(20deg); opacity: 0; }
+            30% { transform: translate(0px, 0px) rotate(0deg); opacity: 1; }
+            45% { transform: translate(-4px, 0px) rotate(-18deg); } /* Lean into Tech */
+            75% { transform: translate(-4px, 0px) rotate(-18deg); } /* Hold lean */
+            100% { transform: translate(0px, 0px) rotate(0deg); } /* Straighten to perfect logo */
+          }
+          .animate-drop-c {
+            animation: drop-c 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+          }
+        `}</style>
+        <div className="text-6xl md:text-7xl font-display font-bold text-white flex items-end tracking-tight">
+          <span className="z-10">Tech</span>
+          <span className="animate-drop-c text-brand-400 inline-block origin-bottom-left -ml-1">C</span>
+        </div>
+      </div>
+    );
   }
 
   return (
