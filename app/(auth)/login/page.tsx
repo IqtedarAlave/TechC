@@ -52,7 +52,8 @@ export default function LoginPage() {
           @keyframes drop-c {
             0% { transform: translate(20px, -200px) rotate(20deg); opacity: 0; }
             30% { transform: translate(0px, 0px) rotate(0deg); opacity: 1; }
-            45% { transform: translate(-4px, 0px) rotate(-18deg); } /* Lean into Tech */
+            40% { transform: translate(0px, 20px) rotate(0deg); } /* Small drop after landing */
+            55% { transform: translate(-4px, 0px) rotate(-18deg); } /* Lean into Tech */
             75% { transform: translate(-4px, 0px) rotate(-18deg); } /* Hold lean */
             100% { transform: translate(0px, 0px) rotate(0deg); } /* Straighten to perfect logo */
           }
