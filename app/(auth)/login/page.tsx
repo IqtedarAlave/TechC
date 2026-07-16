@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, GraduationCap } from "lucide-react";
 
 export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
@@ -62,7 +62,10 @@ export default function LoginPage() {
         `}</style>
         <div className="text-[20vw] font-display font-bold text-white flex items-end tracking-tight leading-none">
           <span className="z-10">Tech</span>
-          <span className="animate-drop-c text-brand-400 inline-block origin-bottom-left -ml-[2vw]">C</span>
+          <span className="animate-drop-c text-brand-400 inline-block origin-bottom-left -ml-[2vw] relative">
+            <GraduationCap className="absolute -top-[6vw] -right-[2vw] w-[10vw] h-[10vw] text-brand-300 transform rotate-[15deg]" strokeWidth={1.5} />
+            C
+          </span>
         </div>
       </div>
     );
